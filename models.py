@@ -24,8 +24,15 @@ class CustomResNet(models.resnet.ResNet):
         x = self.maxpool(x)
 
         layers = [self.layer1, self.layer2, self.layer3, self.layer4]
-        for i in range(end_layer):
-            x = layers[i](x)
+        if end_layer < 4:
+            for i in range(end_layer):
+                x = layers[i](x)
+        else:
+            for i in range(4):
+                x = layers[i](x)
+            x = self.avgpool(x)
+            x = torch.flatten(x, 1)
+            x = self.fc(x)
         return x
 
 
