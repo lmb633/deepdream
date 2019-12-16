@@ -12,8 +12,12 @@ lr = 2.5
 max_jitter = 32
 out_class = 0
 
-noise = np.random.uniform(size=(1, 3, 512, 512)) + 100.0
-input_tensor = Variable(torch.FloatTensor(noise), requires_grad=True)
+# noise = np.random.uniform(size=(1, 3, 512, 512)) + 100.0 #随机噪声
+noise = Image.open('data/00003.jpg')
+noise = np.asarray(noise)
+input_tensor = Variable(torch.FloatTensor(noise).permute(2, 0, 1).unsqueeze(0), requires_grad=True)
+print(input_tensor.shape)
+
 # print(input_tensor)
 
 
@@ -24,7 +28,7 @@ for param in model.parameters():
     param.requires_grad = False
 # optmizer = torch.optim.SGD([input_tensor], lr=0.01)
 
-for i in range(100):
+for i in range(400):
     # shift_x, shift_y = np.random.randint(-max_jitter, max_jitter + 1, 2)
     # input_tensor.data = np.roll(np.roll(input_tensor.data, shift_x, -1), shift_y, -2)
     model.zero_grad()
@@ -42,5 +46,5 @@ for i in range(100):
     if i % 10 == 0:
         img_tensor = input_tensor.squeeze().permute(1, 2, 0)
         image = Image.fromarray(np.uint8(img_tensor.detach().numpy()))
-        image.show()
-        image.save('data/cloud_{}.jpg'.format(i))
+        # image.show()
+        image.save('tmp/cloud_{}.jpg'.format(i))

@@ -24,7 +24,7 @@ class CustomResNet(models.resnet.ResNet):
         x = self.maxpool(x)
 
         layers = [self.layer1, self.layer2, self.layer3, self.layer4]
-        if end_layer < 4:
+        if end_layer <= 4:
             for i in range(end_layer):
                 x = layers[i](x)
         else:

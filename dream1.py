@@ -9,7 +9,7 @@ img_transform = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-input_img = Image.open('data/timg.jpg')
+input_img = Image.open('data/cloud.jpg')
 input_tensor = img_transform(input_img).unsqueeze(0)
 input_np = input_tensor.numpy()
 

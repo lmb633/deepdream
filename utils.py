@@ -8,11 +8,16 @@ import scipy.ndimage as nd
 from torch.autograd import Variable
 import cv2 as cv
 
+img_idx = 0
+
 
 def showarray(a, fmt='jpeg'):
     a = np.uint8(np.clip(a, 0, 255))
     img = PIL.Image.fromarray(a)
-    img.show()
+    global img_idx
+    img.save('tmp/cloud_{0}.jpg'.format(img_idx))
+    img_idx += 1
+    # img.show()
 
 
 def showtensor(a):
@@ -34,16 +39,17 @@ def make_step(img, model, control=None, distance=objective_L2):
     mean = np.array([0.485, 0.456, 0.406]).reshape([3, 1, 1])
     std = np.array([0.229, 0.224, 0.225]).reshape([3, 1, 1])
 
-    learning_rate = 2e-2
+    learning_rate = 5e-2
     max_jitter = 32
-    num_iterations = 20
+    num_iterations = 50
     show_every = 10
-    end_layer = 2
+    end_layer = 5
     guide_features = control
+    out_channel = 275  # 猎犬
 
     for i in range(num_iterations):
         shift_x, shift_y = np.random.randint(-max_jitter, max_jitter + 1, 2)
-        print(shift_x, shift_y)
+        # print(shift_x, shift_y)
         img = np.roll(np.roll(img, shift_x, -1), shift_y, -2)
         # apply jitter shift
         model.zero_grad()
@@ -52,16 +58,22 @@ def make_step(img, model, control=None, distance=objective_L2):
             img_variable = Variable(img_tensor.cuda(), requires_grad=True)
         else:
             img_variable = Variable(img_tensor, requires_grad=True)
-
         act_value = model.forward(img_variable, end_layer)
-        print(act_value.shape)
+        if end_layer >= 4:
+            act_value = act_value[0]
+            # out_channel = np.argmax(act_value.detach().numpy())
+            # print(out_channel)
+            act_value = act_value[out_channel]
+            print(act_value)
         diff_out = distance(act_value, guide_features)
+        if diff_out < 0:
+            diff_out = -diff_out
         act_value.backward(diff_out)
         ratio = np.abs(img_variable.grad.data.cpu().numpy()).mean()
         learning_rate_use = learning_rate / ratio
         print(learning_rate, ratio, learning_rate_use)
         img_variable.data.add_(img_variable.grad.data * learning_rate_use)
-        print(img_variable.grad.data )
+        # print(img_variable.grad.data )
         img = img_variable.data.cpu().numpy()  # b, c, h, w
         img = np.roll(np.roll(img, -shift_x, -1), -shift_y, -2)
         img[0, :, :, :] = np.clip(img[0, :, :, :], -mean / std, (1 - mean) / std)
